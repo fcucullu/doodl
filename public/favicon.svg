@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <rect width="100" height="100" rx="20" fill="#7C3AED"/>
-  <text x="50" y="72" font-size="60" text-anchor="middle" fill="white" font-family="sans-serif" font-weight="bold">D</text>
+  <path d="M50 80 C48 77 24 60 22 42 C21 33 27 24 36 23 C42 22 47 25 50 30 C53 24 59 21 65 22 C73 23 79 32 78 41 C76 59 52 76 50 80Z"
+    fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
