@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import Canvas from "./pages/Canvas";
 import Feed from "./pages/Feed";
 import AuthCallback from "./pages/AuthCallback";
+import Apps from "./pages/Apps";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/canvas" element={<Canvas />} />
             <Route path="/feed" element={<Feed />} />
+            <Route path="/apps" element={<Apps />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
           </Routes>
         </RoomProvider>

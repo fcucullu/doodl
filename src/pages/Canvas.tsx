@@ -179,7 +179,7 @@ export default function Canvas() {
   const toolItems: { id: Tool; label: string }[] = [
     { id: "pencil", label: "✏️" },
     { id: "brush", label: "🖌️" },
-    { id: "eraser", label: "🧹" },
+    { id: "eraser", label: "🫧" },
   ];
 
   return (

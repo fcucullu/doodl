@@ -193,13 +193,13 @@ export default function Feed() {
             <span className="text-lg block">🖼️</span>
             Feed
           </button>
-          <a
-            href="https://franciscocucullu.com/apps"
+          <button
+            onClick={() => navigate("/apps")}
             className="flex-1 py-3 text-center text-xs text-muted"
           >
             <span className="text-lg block">🚀</span>
             Apps
-          </a>
+          </button>
         </div>
       </div>
     </div>
