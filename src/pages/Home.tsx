@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useRoom } from "../lib/room";
+import { useAuth } from "../lib/auth";
 
 function ShareCode({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
@@ -55,6 +56,7 @@ function generateCode() {
 
 export default function Home() {
   const navigate = useNavigate();
+  const { user, loading: authLoading, signIn } = useAuth();
   const { setRoom, roomId, roomCode } = useRoom();
   const urlCode = new URLSearchParams(window.location.search).get("code") || "";
   const [joinCode, setJoinCode] = useState(urlCode);
@@ -62,6 +64,29 @@ export default function Home() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [createdCode, setCreatedCode] = useState<string | null>(null);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center">
+        <p className="text-muted text-sm">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center px-6 gap-4">
+        <h1 className="text-4xl font-bold">Doodl</h1>
+        <p className="text-muted text-sm">Draw and share with your person</p>
+        <button
+          onClick={signIn}
+          className="w-full max-w-xs bg-purple text-white font-medium py-3 rounded-xl mt-4"
+        >
+          Sign in with Google
+        </button>
+      </div>
+    );
+  }
 
   // If already in a room, show option to go back
   if (roomId) {
@@ -116,15 +141,15 @@ export default function Home() {
 
     if (roomErr || !room) { setError("Failed to create room"); setLoading(false); return; }
 
-    const { data: user, error: userErr } = await supabase
+    const { data: doodlUser, error: userErr } = await supabase
       .from("doodl_users")
-      .insert({ room_id: room.id, nickname: nickname.trim() })
+      .insert({ room_id: room.id, nickname: nickname.trim(), auth_id: user!.id })
       .select("id")
       .single();
 
-    if (userErr || !user) { setError("Failed to join room"); setLoading(false); return; }
+    if (userErr || !doodlUser) { setError("Failed to join room"); setLoading(false); return; }
 
-    setRoom(room.id, user.id, code, nickname.trim());
+    setRoom(room.id, doodlUser.id, code, nickname.trim());
     setLoading(false);
     setCreatedCode(code);
   };
@@ -151,15 +176,15 @@ export default function Home() {
 
     if (count && count >= 2) { setError("Room is full"); setLoading(false); return; }
 
-    const { data: user, error: userErr } = await supabase
+    const { data: doodlUser, error: userErr } = await supabase
       .from("doodl_users")
-      .insert({ room_id: room.id, nickname: nickname.trim() })
+      .insert({ room_id: room.id, nickname: nickname.trim(), auth_id: user!.id })
       .select("id")
       .single();
 
-    if (userErr || !user) { setError("Failed to join room"); setLoading(false); return; }
+    if (userErr || !doodlUser) { setError("Failed to join room"); setLoading(false); return; }
 
-    setRoom(room.id, user.id, joinCode.toUpperCase(), nickname.trim());
+    setRoom(room.id, doodlUser.id, joinCode.toUpperCase(), nickname.trim());
     setLoading(false);
     navigate("/canvas");
   };
