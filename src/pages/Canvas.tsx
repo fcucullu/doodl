@@ -19,7 +19,7 @@ export default function Canvas() {
   const navigate = useNavigate();
   const { roomId, userId } = useRoom();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [color, setColor] = useState(COLORS[1]);
+  const [color, setColor] = useState("#EC4899");
   const [bgColor, setBgColor] = useState(BG_COLORS[0]);
   const [brushSize, setBrushSize] = useState(BRUSH_SIZES[1]);
   const [tool, setTool] = useState<Tool>("pencil");
@@ -291,7 +291,7 @@ export default function Canvas() {
               key={t.id}
               onClick={() => setTool(t.id)}
               className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${
-                tool === t.id ? "bg-purple/20 ring-2 ring-purple" : "bg-background"
+                tool === t.id ? "bg-white ring-2 ring-purple" : "bg-white"
               }`}
             >
               {t.label}
@@ -301,7 +301,7 @@ export default function Canvas() {
           {/* Width picker */}
           <button
             onClick={() => setOpenPicker(openPicker === "width" ? null : "width")}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center bg-background ${
+            className={`w-10 h-10 rounded-xl flex items-center justify-center bg-white ${
               openPicker === "width" ? "ring-2 ring-purple" : ""
             }`}
           >
