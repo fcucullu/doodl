@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useRoom } from "../lib/room";
@@ -20,6 +20,7 @@ export default function Feed() {
   const { roomId, userId, roomCode, clearRoom } = useRoom();
   const [doodles, setDoodles] = useState<Doodle[]>([]);
   const [users, setUsers] = useState<Record<string, string>>({});
+  const usersRef = useRef<Record<string, string>>({});
   const [reactingId, setReactingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -33,7 +34,7 @@ export default function Feed() {
         { event: "INSERT", schema: "public", table: "doodl_doodles", filter: `room_id=eq.${roomId}` },
         (payload) => {
           const d = payload.new as Doodle;
-          d.sender_nickname = users[d.sender_id] || "???";
+          d.sender_nickname = usersRef.current[d.sender_id] || "???";
           setDoodles((prev) => [d, ...prev]);
         }
       )
@@ -56,6 +57,7 @@ export default function Feed() {
 
     const userMap: Record<string, string> = {};
     roomUsers?.forEach((u) => { userMap[u.id] = u.nickname; });
+    usersRef.current = userMap;
     setUsers(userMap);
 
     await loadDoodles(userMap);

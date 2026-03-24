@@ -3,6 +3,49 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useRoom } from "../lib/room";
 
+function ShareCode({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  const url = `${window.location.origin}?code=${code}`;
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      await navigator.share({
+        title: "Join my Doodl room!",
+        text: `Join my Doodl room with code: ${code}`,
+        url,
+      }).catch(() => {});
+    } else {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="w-full max-w-xs space-y-3">
+      <p className="text-muted text-sm text-center">Share this code with your person:</p>
+      <button
+        onClick={handleCopy}
+        className="w-full bg-surface border border-border rounded-xl px-4 py-4 text-center font-mono text-2xl tracking-[0.4em] text-foreground active:bg-purple/10"
+      >
+        {copied ? "Copied!" : code}
+      </button>
+      <button
+        onClick={handleShare}
+        className="w-full bg-purple text-white font-medium py-3 rounded-xl"
+      >
+        Share invite
+      </button>
+    </div>
+  );
+}
+
 function generateCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
@@ -12,11 +55,13 @@ function generateCode() {
 
 export default function Home() {
   const navigate = useNavigate();
-  const { setRoom, roomId } = useRoom();
-  const [joinCode, setJoinCode] = useState("");
+  const { setRoom, roomId, roomCode } = useRoom();
+  const urlCode = new URLSearchParams(window.location.search).get("code") || "";
+  const [joinCode, setJoinCode] = useState(urlCode);
   const [nickname, setNickname] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [createdCode, setCreatedCode] = useState<string | null>(null);
 
   // If already in a room, show option to go back
   if (roomId) {
@@ -24,17 +69,34 @@ export default function Home() {
       <div className="min-h-[100dvh] flex flex-col items-center justify-center px-6 gap-4">
         <h1 className="text-3xl font-bold">Doodl</h1>
         <p className="text-muted text-sm">You're already in a room</p>
+        <ShareCode code={roomCode!} />
         <button
           onClick={() => navigate("/canvas")}
-          className="w-full max-w-xs bg-purple text-white font-medium py-3 rounded-xl"
+          className="w-full max-w-xs bg-surface border border-border text-foreground font-medium py-3 rounded-xl"
         >
-          Back to Canvas
+          Go to Canvas
         </button>
         <button
           onClick={() => navigate("/feed")}
           className="w-full max-w-xs bg-surface border border-border text-foreground font-medium py-3 rounded-xl"
         >
           View Feed
+        </button>
+      </div>
+    );
+  }
+
+  // Show share code after creating a room
+  if (createdCode) {
+    return (
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center px-6 gap-4">
+        <h1 className="text-3xl font-bold">Room Created!</h1>
+        <ShareCode code={createdCode} />
+        <button
+          onClick={() => navigate("/canvas")}
+          className="w-full max-w-xs bg-surface border border-border text-foreground font-medium py-3 rounded-xl"
+        >
+          Start Drawing
         </button>
       </div>
     );
@@ -64,7 +126,7 @@ export default function Home() {
 
     setRoom(room.id, user.id, code, nickname.trim());
     setLoading(false);
-    navigate("/canvas");
+    setCreatedCode(code);
   };
 
   const handleJoin = async () => {
