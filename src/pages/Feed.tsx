@@ -39,10 +39,21 @@ export default function Feed() {
     }
   };
 
-  // Register push subscription
+  const [pushStatus, setPushStatus] = useState<"unknown" | "granted" | "denied" | "unsupported">("unknown");
+
+  // Check push status on mount
   useEffect(() => {
-    if (!userId) return;
-    registerPush();
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+      setPushStatus("unsupported");
+      return;
+    }
+    if (Notification.permission === "granted") {
+      setPushStatus("granted");
+      // Silently register if already granted
+      if (userId) registerPush();
+    } else if (Notification.permission === "denied") {
+      setPushStatus("denied");
+    }
   }, [userId]);
 
   const registerPush = async () => {
@@ -54,8 +65,6 @@ export default function Feed() {
 
       let sub = await reg.pushManager.getSubscription();
       if (!sub) {
-        const result = await Notification.requestPermission();
-        if (result !== "granted") return;
         sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: vapidKey,
@@ -67,7 +76,17 @@ export default function Feed() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, subscription: sub.toJSON() }),
       });
+      setPushStatus("granted");
     } catch {}
+  };
+
+  const handleEnableNotifications = async () => {
+    const result = await Notification.requestPermission();
+    if (result === "granted") {
+      await registerPush();
+    } else {
+      setPushStatus("denied");
+    }
   };
 
   useEffect(() => {
@@ -177,6 +196,19 @@ export default function Feed() {
           </button>
         </div>
       </div>
+
+      {/* Notification banner */}
+      {pushStatus === "unknown" && (
+        <div className="mx-4 mt-3 bg-purple/10 border border-purple/30 rounded-xl p-3 flex items-center justify-between">
+          <p className="text-xs text-foreground">🔔 Activate notifications to know when you get a new doodle</p>
+          <button
+            onClick={handleEnableNotifications}
+            className="ml-3 px-3 py-1.5 bg-purple text-white text-xs font-medium rounded-lg shrink-0"
+          >
+            Enable
+          </button>
+        </div>
+      )}
 
       {/* Doodle list */}
       <div className="flex-1 overflow-y-auto p-4 pb-[calc(1rem+4rem+env(safe-area-inset-bottom))] space-y-4">
