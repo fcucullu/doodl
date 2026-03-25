@@ -5,16 +5,10 @@
   "vercel_project_name": "doodl",
   "subdomain": "doodl",
   "domain": "franciscocucullu.com",
-  "vapid_public_key": "BP6DbuH_BfA3DpIgH_kkM5lj_Hq9uGnxUVQDnBB_jaCjRjtLMs9ovUCv2pyxCMtxOyzkRVpgI8rBE4xs9cF3xnM",
+  "vapid_public_key": "BFyWG7ktCE-M5QxTEU8qjIog7JHeEA4Nz3I8g6PZky7--eOn6kG6C9L-4hjVPU_Vl4hNhpUaBK7EJkMRv2aRZjA",
   "portfolio_title": "Doodl",
   "portfolio_description": "Draw and share doodles with your person. Pair via a 6-character code and exchange drawings in real-time with emoji reactions.",
-  "portfolio_body": "Doodl is an intimate, playful PWA for two people to communicate through drawings. Create a room and share a pairing code \u2014 no account needed. Draw on a full-screen canvas with multiple colors, brush sizes, and an eraser, then send your doodle. Your partner sees it instantly via Supabase real-time subscriptions and can react with emojis. The feed shows all exchanged doodles chronologically, making it a visual conversation thread.",
-  "portfolio_tags": [
-    "React",
-    "Supabase",
-    "PWA",
-    "TypeScript",
-    "Vite"
-  ],
+  "portfolio_body": "Doodl is an intimate, playful PWA for two people to communicate through drawings. Create a room and share a pairing code — no account needed. Draw on a full-screen canvas with multiple colors, brush sizes, and an eraser, then send your doodle. Your partner sees it instantly via Supabase real-time subscriptions and can react with emojis. The feed shows all exchanged doodles chronologically, making it a visual conversation thread.",
+  "portfolio_tags": ["React", "Supabase", "PWA", "TypeScript", "Vite"],
   "portfolio_img": "/assets/stock-1.jpg"
 }
