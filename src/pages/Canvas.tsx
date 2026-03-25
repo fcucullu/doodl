@@ -17,7 +17,7 @@ type Tool = "pencil" | "brush" | "eraser";
 
 export default function Canvas() {
   const navigate = useNavigate();
-  const { roomId, userId } = useRoom();
+  const { roomId, userId, activeRoom } = useRoom();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [color, setColor] = useState("#EC4899");
   const [bgColor, setBgColor] = useState(BG_COLORS[0]);
@@ -170,6 +170,18 @@ export default function Canvas() {
     });
 
     if (insertErr) { setSending(false); alert("Failed to send"); return; }
+
+    // Send push notification to other room members
+    fetch("/api/push", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        roomId,
+        senderId: userId,
+        imageUrl: publicUrl,
+        senderNickname: activeRoom?.nickname,
+      }),
+    }).catch(() => {});
 
     clearCanvas();
     setSending(false);

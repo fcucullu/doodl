@@ -104,6 +104,7 @@ export default function Rooms() {
         .eq("id", room.doodlUserId);
     }
     removeRoom(rid);
+    setRoomsData((prev) => prev.filter((r) => r.roomId !== rid));
     setDeleteConfirmId(null);
     if (rooms.length <= 1) navigate("/");
   };

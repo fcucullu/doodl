@@ -8,7 +8,6 @@ precacheAndRoute(self.__WB_MANIFEST);
 // Update badge by calling the badge API
 async function updateBadge() {
   try {
-    // Try auth_id first for multi-room, fall back to single room
     const authId = await getStoredValue("doodl_auth_id");
     let url: string;
     if (authId) {
@@ -34,23 +33,52 @@ async function updateBadge() {
   } catch {}
 }
 
-// Read localStorage values via client messaging
 function getStoredValue(key: string): Promise<string | null> {
   return new Promise((resolve) => {
-    // Try to get from a connected client
     self.clients.matchAll({ type: "window" }).then((clients) => {
-      if (clients.length === 0) {
-        resolve(null);
-        return;
-      }
+      if (clients.length === 0) { resolve(null); return; }
       const channel = new MessageChannel();
       channel.port1.onmessage = (event) => resolve(event.data);
       clients[0].postMessage({ type: "get-storage", key }, [channel.port2]);
-      // Timeout after 2s
       setTimeout(() => resolve(null), 2000);
     });
   });
 }
+
+// Push notification handler
+self.addEventListener("push", (event) => {
+  const data = event.data ? event.data.json() : {};
+  const options: NotificationOptions & { image?: string } = {
+    body: data.body || "Nuevo doodle!",
+    icon: data.icon || "/icon-192.png",
+    badge: "/icon-192.png",
+    image: data.image,
+    data: { url: data.url || "/feed" },
+    vibrate: [200, 100, 200],
+  };
+
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(data.title || "Doodl", options),
+      updateBadge(),
+    ])
+  );
+});
+
+// Notification click handler
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || "/feed";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window" }).then((clients) => {
+      for (const client of clients) {
+        if ("focus" in client) return client.focus();
+      }
+      return self.clients.openWindow(url);
+    })
+  );
+});
 
 // Periodic background sync
 self.addEventListener("periodicsync", (event: any) => {
@@ -77,9 +105,5 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("message", (event) => {
   if (event.data === "update-badge") {
     event.waitUntil(updateBadge());
-  }
-  // Respond to storage requests from the SW
-  if (event.data?.type === "get-storage" && event.ports[0]) {
-    // This is handled by the client, not the SW
   }
 });

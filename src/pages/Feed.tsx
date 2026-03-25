@@ -39,6 +39,37 @@ export default function Feed() {
     }
   };
 
+  // Register push subscription
+  useEffect(() => {
+    if (!userId) return;
+    registerPush();
+  }, [userId]);
+
+  const registerPush = async () => {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      if (!vapidKey) return;
+
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        const result = await Notification.requestPermission();
+        if (result !== "granted") return;
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: vapidKey,
+        });
+      }
+
+      await fetch("/api/push", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, subscription: sub.toJSON() }),
+      });
+    } catch {}
+  };
+
   useEffect(() => {
     if (!roomId) { navigate("/"); return; }
     loadData();
