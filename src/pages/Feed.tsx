@@ -23,9 +23,23 @@ export default function Feed() {
   const usersRef = useRef<Record<string, string>>({});
   const [reactingId, setReactingId] = useState<string | null>(null);
 
+  // Mark feed as seen and update badge
+  const markSeen = async () => {
+    if (!userId) return;
+    await supabase
+      .from("doodl_users")
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq("id", userId);
+    // Clear badge
+    if ("clearAppBadge" in navigator) {
+      (navigator as any).clearAppBadge().catch(() => {});
+    }
+  };
+
   useEffect(() => {
     if (!roomId) { navigate("/"); return; }
     loadData();
+    markSeen();
 
     const channel = supabase
       .channel(`doodles:${roomId}`)

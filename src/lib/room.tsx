@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 
 interface RoomState {
   roomId: string | null;
@@ -38,6 +38,18 @@ export function RoomProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("doodl_room_code");
     localStorage.removeItem("doodl_nickname");
   };
+
+  // Listen for service worker storage requests
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === "get-storage" && event.ports?.[0]) {
+        const value = localStorage.getItem(event.data.key);
+        event.ports[0].postMessage(value);
+      }
+    };
+    navigator.serviceWorker?.addEventListener("message", handler);
+    return () => navigator.serviceWorker?.removeEventListener("message", handler);
+  }, []);
 
   return (
     <RoomContext.Provider value={{ roomId, userId, roomCode, nickname, setRoom, clearRoom }}>
