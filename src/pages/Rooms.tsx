@@ -15,10 +15,12 @@ export default function Rooms() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
 
+  // Reload room data on every mount (component remounts on navigation)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (rooms.length === 0) { navigate("/"); return; }
     loadRoomData();
-  }, [rooms]);
+  }, [rooms.length]);
 
   const loadRoomData = async () => {
     const enriched: RoomWithBadge[] = [];
@@ -76,8 +78,16 @@ export default function Rooms() {
     }
   };
 
-  const handleSelect = (roomId: string) => {
+  const handleSelect = async (roomId: string) => {
     setActiveRoom(roomId);
+    // Mark as seen immediately so badge clears
+    const room = rooms.find((r) => r.roomId === roomId);
+    if (room) {
+      await supabase
+        .from("doodl_users")
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq("id", room.doodlUserId);
+    }
     navigate("/feed");
   };
 
