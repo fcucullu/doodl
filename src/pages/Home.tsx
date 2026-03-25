@@ -88,6 +88,12 @@ export default function Home() {
     );
   }
 
+  // If user has rooms, redirect to rooms list
+  if (rooms.length > 0 && !createdCode) {
+    navigate("/rooms", { replace: true });
+    return null;
+  }
+
   // Show share code after creating a room
   if (createdCode) {
     return (
@@ -181,15 +187,6 @@ export default function Home() {
     <div className="min-h-[100dvh] flex flex-col items-center justify-center px-6">
       <h1 className="text-4xl font-bold mb-2">Doodl</h1>
       <p className="text-muted text-sm mb-8">Draw and share with your people</p>
-
-      {rooms.length > 0 && (
-        <button
-          onClick={() => navigate("/rooms")}
-          className="w-full max-w-xs bg-purple text-white font-medium py-3 rounded-xl mb-4"
-        >
-          My Rooms ({rooms.length})
-        </button>
-      )}
 
       <div className="w-full max-w-xs space-y-4">
         <input
