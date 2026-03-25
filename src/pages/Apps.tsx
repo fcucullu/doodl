@@ -106,6 +106,9 @@ export default function Apps() {
       {/* Bottom nav */}
       <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border">
         <div className="flex pb-[env(safe-area-inset-bottom)]">
+          <button onClick={() => navigate("/rooms")} className="flex-1 py-3 text-center text-xs text-muted">
+            <span className="text-lg block">🏠</span>Rooms
+          </button>
           <button onClick={() => navigate("/canvas")} className="flex-1 py-3 text-center text-xs text-muted">
             <span className="text-lg block">✏️</span>Canvas
           </button>
