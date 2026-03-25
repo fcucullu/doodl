@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useRoom, type RoomEntry } from "../lib/room";
 
@@ -10,17 +10,17 @@ interface RoomWithBadge extends RoomEntry {
 
 export default function Rooms() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { rooms, setActiveRoom, removeRoom, updateRoomName } = useRoom();
   const [roomsData, setRoomsData] = useState<RoomWithBadge[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
 
-  // Reload room data on every mount (component remounts on navigation)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Reload every time user navigates to this page
   useEffect(() => {
     if (rooms.length === 0) { navigate("/"); return; }
     loadRoomData();
-  }, [rooms.length]);
+  }, [location.key]);
 
   const loadRoomData = async () => {
     const enriched: RoomWithBadge[] = [];
