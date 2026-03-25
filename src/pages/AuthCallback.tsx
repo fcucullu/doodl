@@ -7,7 +7,14 @@ export default function AuthCallback() {
 
   useEffect(() => {
     supabase.auth.getSession().then(() => {
-      navigate("/", { replace: true });
+      // Restore pending room code if user was joining via shared link
+      const pendingCode = localStorage.getItem("doodl_pending_code");
+      if (pendingCode) {
+        localStorage.removeItem("doodl_pending_code");
+        navigate(`/?code=${pendingCode}&new=1`, { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
     });
   }, [navigate]);
 

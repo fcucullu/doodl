@@ -74,12 +74,21 @@ export default function Home() {
   }
 
   if (!user) {
+    // Save pending code so we can restore it after auth
+    const handleSignIn = () => {
+      if (urlCode) localStorage.setItem("doodl_pending_code", urlCode);
+      signIn();
+    };
+
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center px-6 gap-4">
         <h1 className="text-4xl font-bold">Doodl</h1>
         <p className="text-muted text-sm">Draw and share with your people</p>
+        {urlCode && (
+          <p className="text-purple-light text-sm">Room code: {urlCode} — sign in to join</p>
+        )}
         <button
-          onClick={signIn}
+          onClick={handleSignIn}
           className="w-full max-w-xs bg-purple text-white font-medium py-3 rounded-xl mt-4"
         >
           Sign in with Google
