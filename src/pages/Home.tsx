@@ -185,52 +185,65 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-[100dvh] flex flex-col items-center justify-center px-6">
-      <h1 className="text-4xl font-bold mb-2">Doodl</h1>
-      <p className="text-muted text-sm mb-8">Draw and share with your people</p>
-
-      <div className="w-full max-w-xs space-y-4">
-        <input
-          type="text"
-          value={nickname}
-          onChange={(e) => setNickname(e.target.value)}
-          placeholder="Your nickname"
-          maxLength={20}
-          className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-foreground text-sm outline-none focus:border-purple"
-        />
-
-        <button
-          onClick={handleCreate}
-          disabled={loading}
-          className="w-full bg-surface border border-border text-foreground font-medium py-3 rounded-xl disabled:opacity-50"
-        >
-          + Create New Room
-        </button>
-
-        <div className="flex items-center gap-3 text-muted text-xs">
-          <div className="flex-1 h-px bg-border" />
-          <span>or join</span>
-          <div className="flex-1 h-px bg-border" />
+    <div className="min-h-[100dvh] flex flex-col bg-background">
+      {/* Top bar with back button */}
+      {rooms.length > 0 && (
+        <div className="bg-surface border-b border-border px-4 py-2 shrink-0">
+          <button onClick={() => navigate("/rooms")} className="text-muted text-sm">
+            ← Back
+          </button>
         </div>
+      )}
 
-        <input
-          type="text"
-          value={joinCode}
-          onChange={(e) => setJoinCode(e.target.value.toUpperCase().slice(0, 6))}
-          placeholder="Enter 6-letter code"
-          maxLength={6}
-          className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-foreground text-sm text-center tracking-[0.3em] font-mono uppercase outline-none focus:border-purple"
-        />
+      <div className="flex-1 flex flex-col items-center justify-center px-6">
+        <h1 className="text-4xl font-bold mb-2">Doodl</h1>
+        <p className="text-muted text-sm mb-8">
+          {rooms.length > 0 ? "Create or join a room" : "Draw and share with your people"}
+        </p>
 
-        <button
-          onClick={handleJoin}
-          disabled={loading || joinCode.length !== 6}
-          className="w-full bg-surface border border-border text-foreground font-medium py-3 rounded-xl disabled:opacity-50"
-        >
-          Join Room
-        </button>
+        <div className="w-full max-w-xs space-y-4">
+          <input
+            type="text"
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            placeholder="Your nickname"
+            maxLength={20}
+            className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-foreground text-sm outline-none focus:border-purple"
+          />
 
-        {error && <p className="text-red-400 text-xs text-center">{error}</p>}
+          <button
+            onClick={handleCreate}
+            disabled={loading}
+            className="w-full bg-purple text-white font-semibold py-3.5 rounded-xl disabled:opacity-50 text-base"
+          >
+            + Create New Room
+          </button>
+
+          <div className="flex items-center gap-3 text-muted text-xs">
+            <div className="flex-1 h-px bg-border" />
+            <span>or join one</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          <input
+            type="text"
+            value={joinCode}
+            onChange={(e) => setJoinCode(e.target.value.toUpperCase().slice(0, 6))}
+            placeholder="Enter 6-letter code"
+            maxLength={6}
+            className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-foreground text-sm text-center tracking-[0.3em] font-mono uppercase outline-none focus:border-purple"
+          />
+
+          <button
+            onClick={handleJoin}
+            disabled={loading || joinCode.length !== 6}
+            className="w-full bg-purple/80 text-white font-semibold py-3.5 rounded-xl disabled:opacity-30 text-base"
+          >
+            Join Room
+          </button>
+
+          {error && <p className="text-red-400 text-xs text-center">{error}</p>}
+        </div>
       </div>
     </div>
   );
