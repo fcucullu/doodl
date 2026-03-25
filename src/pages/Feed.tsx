@@ -17,7 +17,7 @@ const REACTION_EMOJIS = ["❤️", "😂", "🔥", "😍", "👏", "🎨"];
 
 export default function Feed() {
   const navigate = useNavigate();
-  const { roomId, userId, roomCode, clearRoom } = useRoom();
+  const { roomId, userId, roomCode, clearRoom, activeRoom } = useRoom();
   const [doodles, setDoodles] = useState<Doodle[]>([]);
   const [users, setUsers] = useState<Record<string, string>>({});
   const usersRef = useRef<Record<string, string>>({});
@@ -113,8 +113,8 @@ export default function Feed() {
       {/* Header */}
       <div className="bg-surface border-b border-border px-4 py-3 flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold">Doodl Feed</h1>
-          <p className="text-xs text-muted">Room: {roomCode}</p>
+          <h1 className="text-lg font-bold">{activeRoom?.name || `Room ${roomCode}`}</h1>
+          <p className="text-xs text-muted">Code: {roomCode}</p>
         </div>
         <div className="flex gap-2">
           <button
