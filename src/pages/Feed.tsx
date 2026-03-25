@@ -33,7 +33,7 @@ export default function Feed() {
     if (!userId) return;
     await supabase
       .from("doodl_users")
-      .update({ last_seen_at: new Date().toISOString() })
+      .update({ last_seen_at: new Date(Date.now() + 1000).toISOString() })
       .eq("id", userId);
     if ("clearAppBadge" in navigator) {
       (navigator as any).clearAppBadge().catch(() => {});

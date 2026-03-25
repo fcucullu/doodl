@@ -78,16 +78,18 @@ export default function Rooms() {
     }
   };
 
-  const handleSelect = async (roomId: string) => {
-    setActiveRoom(roomId);
-    // Mark as seen immediately so badge clears
-    const room = rooms.find((r) => r.roomId === roomId);
+  const handleSelect = async (rid: string) => {
+    // Mark as seen immediately and update local state
+    const room = rooms.find((r) => r.roomId === rid);
     if (room) {
       await supabase
         .from("doodl_users")
-        .update({ last_seen_at: new Date().toISOString() })
+        .update({ last_seen_at: new Date(Date.now() + 1000).toISOString() })
         .eq("id", room.doodlUserId);
     }
+    // Clear badge from local state immediately
+    setRoomsData((prev) => prev.map((r) => r.roomId === rid ? { ...r, unseen: 0 } : r));
+    setActiveRoom(rid);
     navigate("/feed");
   };
 
