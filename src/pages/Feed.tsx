@@ -3,6 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useRoom } from "../lib/room";
 
+interface Reaction {
+  emoji: string;
+  reactor_id: string;
+}
+
 interface Doodle {
   id: string;
   room_id: string;
@@ -10,7 +15,7 @@ interface Doodle {
   image_url: string;
   created_at: string;
   sender_nickname?: string;
-  reaction?: string;
+  reactions: Reaction[];
 }
 
 const REACTION_EMOJIS = ["❤️", "😂", "🔥", "😍", "👏", "🎨"];
@@ -30,7 +35,6 @@ export default function Feed() {
       .from("doodl_users")
       .update({ last_seen_at: new Date().toISOString() })
       .eq("id", userId);
-    // Clear badge
     if ("clearAppBadge" in navigator) {
       (navigator as any).clearAppBadge().catch(() => {});
     }
@@ -47,9 +51,13 @@ export default function Feed() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "doodl_doodles", filter: `room_id=eq.${roomId}` },
         (payload) => {
-          const d = payload.new as Doodle;
-          d.sender_nickname = usersRef.current[d.sender_id] || "???";
-          setDoodles((prev) => [d, ...prev]);
+          const d = payload.new as any;
+          const doodle: Doodle = {
+            ...d,
+            sender_nickname: usersRef.current[d.sender_id] || "???",
+            reactions: [],
+          };
+          setDoodles((prev) => [doodle, ...prev]);
         }
       )
       .on(
@@ -63,7 +71,6 @@ export default function Feed() {
   }, [roomId]);
 
   const loadData = async () => {
-    // Load users in this room
     const { data: roomUsers } = await supabase
       .from("doodl_users")
       .select("id, nickname")
@@ -81,23 +88,23 @@ export default function Feed() {
     const map = userMap || users;
     const { data } = await supabase
       .from("doodl_doodles")
-      .select("*, doodl_reactions(emoji)")
+      .select("*, doodl_reactions(emoji, reactor_id)")
       .eq("room_id", roomId!)
       .order("created_at", { ascending: false });
 
-    const enriched = (data ?? []).map((d) => ({
+    const enriched: Doodle[] = (data ?? []).map((d) => ({
       ...d,
       sender_nickname: map[d.sender_id] || "???",
-      reaction: d.doodl_reactions?.[0]?.emoji || undefined,
+      reactions: (d.doodl_reactions || []) as Reaction[],
     }));
     setDoodles(enriched);
   };
 
   const handleReact = async (doodleId: string, emoji: string) => {
-    // Upsert reaction
+    if (!userId) return;
     await supabase.from("doodl_reactions").upsert(
-      { doodle_id: doodleId, emoji },
-      { onConflict: "doodle_id" }
+      { doodle_id: doodleId, emoji, reactor_id: userId },
+      { onConflict: "doodle_id,reactor_id" }
     );
     setReactingId(null);
     loadDoodles();
@@ -105,8 +112,18 @@ export default function Feed() {
 
   const handleLeave = () => {
     clearRoom();
-    navigate("/");
+    navigate("/rooms");
   };
+
+  // Group reactions by emoji for display
+  function groupReactions(reactions: Reaction[]) {
+    const groups: Record<string, string[]> = {};
+    for (const r of reactions) {
+      if (!groups[r.emoji]) groups[r.emoji] = [];
+      groups[r.emoji].push(r.reactor_id);
+    }
+    return Object.entries(groups);
+  }
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background">
@@ -140,54 +157,72 @@ export default function Feed() {
           </p>
         )}
 
-        {doodles.map((d) => (
-          <div key={d.id} className="bg-surface rounded-2xl border border-border overflow-hidden">
-            <img
-              src={d.image_url}
-              alt="Doodle"
-              className="w-full"
-              loading="lazy"
-            />
-            <div className="px-4 py-3 flex items-center justify-between">
-              <div>
-                <span className="text-sm font-medium">
-                  {d.sender_id === userId ? "You" : d.sender_nickname}
-                </span>
-                <span className="text-xs text-muted ml-2">
-                  {new Date(d.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                {d.reaction && (
-                  <span className="text-xl">{d.reaction}</span>
-                )}
-                {d.sender_id !== userId && (
-                  <button
-                    onClick={() => setReactingId(reactingId === d.id ? null : d.id)}
-                    className="text-muted hover:text-foreground text-sm"
-                  >
-                    {d.reaction ? "change" : "react"}
-                  </button>
-                )}
-              </div>
-            </div>
+        {doodles.map((d) => {
+          const grouped = groupReactions(d.reactions);
+          const myReaction = d.reactions.find((r) => r.reactor_id === userId)?.emoji;
 
-            {/* Reaction picker */}
-            {reactingId === d.id && (
-              <div className="px-4 pb-3 flex gap-2">
-                {REACTION_EMOJIS.map((emoji) => (
-                  <button
-                    key={emoji}
-                    onClick={() => handleReact(d.id, emoji)}
-                    className="text-2xl hover:scale-125 transition-transform"
-                  >
-                    {emoji}
-                  </button>
-                ))}
+          return (
+            <div key={d.id} className="bg-surface rounded-2xl border border-border overflow-hidden relative">
+              <img
+                src={d.image_url}
+                alt="Doodle"
+                className="w-full"
+                loading="lazy"
+              />
+
+              {/* Reactions bar — WhatsApp style, overlapping bottom of image */}
+              {grouped.length > 0 && (
+                <div className="flex gap-1 px-3 -mt-4 relative z-10">
+                  {grouped.map(([emoji, reactors]) => (
+                    <span
+                      key={emoji}
+                      className="inline-flex items-center gap-0.5 bg-surface/90 backdrop-blur border border-border rounded-full px-2 py-1 text-sm"
+                    >
+                      {emoji}
+                      {reactors.length > 1 && (
+                        <span className="text-xs text-muted">{reactors.length}</span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="px-4 py-3 flex items-center justify-between">
+                <div>
+                  <span className="text-sm font-medium">
+                    {d.sender_id === userId ? "You" : d.sender_nickname}
+                  </span>
+                  <span className="text-xs text-muted ml-2">
+                    {new Date(d.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setReactingId(reactingId === d.id ? null : d.id)}
+                  className="text-muted hover:text-foreground text-sm"
+                >
+                  {myReaction ? `${myReaction} change` : "+ react"}
+                </button>
               </div>
-            )}
-          </div>
-        ))}
+
+              {/* Reaction picker */}
+              {reactingId === d.id && (
+                <div className="px-4 pb-3 flex gap-2 flex-wrap">
+                  {REACTION_EMOJIS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => handleReact(d.id, emoji)}
+                      className={`text-2xl hover:scale-125 transition-transform ${
+                        myReaction === emoji ? "scale-125 ring-2 ring-purple rounded-lg" : ""
+                      }`}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Bottom nav */}
