@@ -15,6 +15,7 @@ export default function Rooms() {
   const [roomsData, setRoomsData] = useState<RoomWithBadge[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Reload every time user navigates to this page
   useEffect(() => {
@@ -93,8 +94,17 @@ export default function Rooms() {
     navigate("/feed");
   };
 
-  const handleLeave = (roomId: string) => {
-    removeRoom(roomId);
+  const handleLeave = async (rid: string) => {
+    const room = rooms.find((r) => r.roomId === rid);
+    if (room) {
+      // Delete the user's membership from DB
+      await supabase
+        .from("doodl_users")
+        .delete()
+        .eq("id", room.doodlUserId);
+    }
+    removeRoom(rid);
+    setDeleteConfirmId(null);
     if (rooms.length <= 1) navigate("/");
   };
 
@@ -188,7 +198,7 @@ export default function Rooms() {
                 Rename
               </button>
               <button
-                onClick={() => handleLeave(room.roomId)}
+                onClick={() => setDeleteConfirmId(room.roomId)}
                 className="py-2 px-3 rounded-lg text-xs font-medium bg-background text-red-400 border border-border"
               >
                 Leave
@@ -197,6 +207,32 @@ export default function Rooms() {
           </div>
         ))}
       </div>
+
+      {/* Leave confirmation modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center px-6">
+          <div className="bg-surface rounded-2xl p-6 border border-border max-w-sm w-full">
+            <h3 className="font-bold text-foreground mb-2">Leave Room?</h3>
+            <p className="text-sm text-muted mb-6">
+              You will be removed from this room. You can rejoin later with the room code.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 py-2.5 rounded-xl border border-border text-foreground text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleLeave(deleteConfirmId)}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium"
+              >
+                Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom nav */}
       <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border">
