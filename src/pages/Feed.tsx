@@ -22,7 +22,7 @@ const REACTION_EMOJIS = ["❤️", "😂", "🔥", "😍", "👏", "🎨"];
 
 export default function Feed() {
   const navigate = useNavigate();
-  const { roomId, userId, roomCode, clearRoom, activeRoom } = useRoom();
+  const { roomId, userId, roomCode, clearRoom, activeRoom, rooms } = useRoom();
   const [doodles, setDoodles] = useState<Doodle[]>([]);
   const usersRef = useRef<Record<string, string>>({});
   const [reactingId, setReactingId] = useState<string | null>(null);
@@ -71,7 +71,7 @@ export default function Feed() {
   };
 
   useEffect(() => {
-    if (!roomId) { navigate("/"); return; }
+    if (!roomId) { navigate(rooms.length > 0 ? "/rooms" : "/"); return; }
     loadData();
     markSeen();
 

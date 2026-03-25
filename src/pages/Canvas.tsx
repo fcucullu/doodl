@@ -17,7 +17,7 @@ type Tool = "pencil" | "brush" | "eraser";
 
 export default function Canvas() {
   const navigate = useNavigate();
-  const { roomId, userId, activeRoom } = useRoom();
+  const { roomId, userId, activeRoom, rooms } = useRoom();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [color, setColor] = useState("#EC4899");
   const [bgColor, setBgColor] = useState(BG_COLORS[0]);
@@ -30,7 +30,7 @@ export default function Canvas() {
   const lastPressure = useRef(0.5);
 
   useEffect(() => {
-    if (!roomId) { navigate("/"); return; }
+    if (!roomId) { navigate(rooms.length > 0 ? "/rooms" : "/"); return; }
     initCanvas();
   }, [roomId, navigate]);
 
