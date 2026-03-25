@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useRoom } from "../lib/room";
@@ -54,27 +54,74 @@ function generateCode() {
   return code;
 }
 
+function getDisplayName(user: any): string {
+  return user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "User";
+}
+
 export default function Home() {
   const navigate = useNavigate();
   const { user, loading: authLoading, signIn } = useAuth();
-  const { rooms, addRoom } = useRoom();
+  const { rooms, addRoom, setActiveRoom } = useRoom();
   const urlCode = new URLSearchParams(window.location.search).get("code") || "";
   const [joinCode, setJoinCode] = useState(urlCode);
-  const [nickname, setNickname] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [createdCode, setCreatedCode] = useState<string | null>(null);
+  const [autoJoining, setAutoJoining] = useState(false);
 
-  if (authLoading) {
+  // Auto-join when user arrives with a code and is authenticated
+  useEffect(() => {
+    if (user && urlCode && !autoJoining && !createdCode) {
+      setAutoJoining(true);
+      autoJoin(urlCode);
+    }
+  }, [user, urlCode]);
+
+  const autoJoin = async (code: string) => {
+    const { data: room } = await supabase
+      .from("doodl_rooms")
+      .select("id, name")
+      .eq("code", code.toUpperCase())
+      .single();
+
+    if (!room) { setAutoJoining(false); setError("Room not found"); return; }
+
+    // Already in this room? Go straight to feed
+    const existing = rooms.find((r) => r.roomId === room.id);
+    if (existing) {
+      setActiveRoom(room.id);
+      navigate("/feed", { replace: true });
+      return;
+    }
+
+    const displayName = getDisplayName(user!);
+    const { data: doodlUser, error: userErr } = await supabase
+      .from("doodl_users")
+      .insert({ room_id: room.id, nickname: displayName, auth_id: user!.id })
+      .select("id")
+      .single();
+
+    if (userErr || !doodlUser) { setAutoJoining(false); setError("Failed to join"); return; }
+
+    addRoom({
+      roomId: room.id,
+      doodlUserId: doodlUser.id,
+      code: code.toUpperCase(),
+      nickname: displayName,
+      name: room.name || undefined,
+    });
+    navigate("/feed", { replace: true });
+  };
+
+  if (authLoading || autoJoining) {
     return (
       <div className="min-h-[100dvh] flex items-center justify-center">
-        <p className="text-muted text-sm">Loading...</p>
+        <p className="text-muted text-sm">{autoJoining ? "Joining room..." : "Loading..."}</p>
       </div>
     );
   }
 
   if (!user) {
-    // Save pending code so we can restore it after auth
     const handleSignIn = () => {
       if (urlCode) localStorage.setItem("doodl_pending_code", urlCode);
       signIn();
@@ -120,15 +167,16 @@ export default function Home() {
     );
   }
 
+  const displayName = getDisplayName(user);
+
   const handleCreate = async () => {
-    if (!nickname.trim()) { setError("Enter a nickname"); return; }
     setLoading(true);
     setError("");
 
     const code = generateCode();
     const { data: room, error: roomErr } = await supabase
       .from("doodl_rooms")
-      .insert({ code, name: nickname.trim() + "'s Room" })
+      .insert({ code, name: displayName + "'s Room" })
       .select("id")
       .single();
 
@@ -136,7 +184,7 @@ export default function Home() {
 
     const { data: doodlUser, error: userErr } = await supabase
       .from("doodl_users")
-      .insert({ room_id: room.id, nickname: nickname.trim(), auth_id: user!.id })
+      .insert({ room_id: room.id, nickname: displayName, auth_id: user!.id })
       .select("id")
       .single();
 
@@ -146,15 +194,14 @@ export default function Home() {
       roomId: room.id,
       doodlUserId: doodlUser.id,
       code,
-      nickname: nickname.trim(),
-      name: nickname.trim() + "'s Room",
+      nickname: displayName,
+      name: displayName + "'s Room",
     });
     setLoading(false);
     setCreatedCode(code);
   };
 
   const handleJoin = async () => {
-    if (!nickname.trim()) { setError("Enter a nickname"); return; }
     if (joinCode.length !== 6) { setError("Code must be 6 characters"); return; }
     setLoading(true);
     setError("");
@@ -167,16 +214,15 @@ export default function Home() {
 
     if (!room) { setError("Room not found"); setLoading(false); return; }
 
-    // Check if already in this room
     if (rooms.some((r) => r.roomId === room.id)) {
-      setError("You're already in this room");
-      setLoading(false);
+      setActiveRoom(room.id);
+      navigate("/feed");
       return;
     }
 
     const { data: doodlUser, error: userErr } = await supabase
       .from("doodl_users")
-      .insert({ room_id: room.id, nickname: nickname.trim(), auth_id: user!.id })
+      .insert({ room_id: room.id, nickname: displayName, auth_id: user!.id })
       .select("id")
       .single();
 
@@ -186,16 +232,15 @@ export default function Home() {
       roomId: room.id,
       doodlUserId: doodlUser.id,
       code: joinCode.toUpperCase(),
-      nickname: nickname.trim(),
+      nickname: displayName,
       name: room.name || undefined,
     });
     setLoading(false);
-    navigate("/rooms");
+    navigate("/feed");
   };
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background">
-      {/* Top bar with back button */}
       {rooms.length > 0 && (
         <div className="bg-surface border-b border-border px-4 py-2 shrink-0">
           <button onClick={() => navigate("/rooms")} className="text-muted text-sm">
@@ -206,20 +251,12 @@ export default function Home() {
 
       <div className="flex-1 flex flex-col items-center justify-center px-6">
         <h1 className="text-4xl font-bold mb-2">Doodl</h1>
-        <p className="text-muted text-sm mb-8">
+        <p className="text-muted text-sm mb-1">
           {rooms.length > 0 ? "Create or join a room" : "Draw and share with your people"}
         </p>
+        <p className="text-purple-light text-xs mb-8">Hi, {displayName}!</p>
 
         <div className="w-full max-w-xs space-y-4">
-          <input
-            type="text"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            placeholder="Your nickname"
-            maxLength={20}
-            className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-foreground text-sm outline-none focus:border-purple"
-          />
-
           <button
             onClick={handleCreate}
             disabled={loading}
