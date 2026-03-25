@@ -48,14 +48,14 @@ function getStoredValue(key: string): Promise<string | null> {
 // Push notification handler
 self.addEventListener("push", (event) => {
   const data = event.data ? event.data.json() : {};
-  const options: NotificationOptions & { image?: string } = {
+  const options = {
     body: data.body || "Nuevo doodle!",
     icon: data.icon || "/icon-192.png",
     badge: "/icon-192.png",
     image: data.image,
     data: { url: data.url || "/feed" },
     vibrate: [200, 100, 200],
-  };
+  } as any;
 
   event.waitUntil(
     Promise.all([
