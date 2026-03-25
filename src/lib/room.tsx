@@ -1,42 +1,108 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 
+export interface RoomEntry {
+  roomId: string;
+  doodlUserId: string;
+  code: string;
+  nickname: string;
+  name?: string;
+}
+
 interface RoomState {
+  rooms: RoomEntry[];
+  activeRoom: RoomEntry | null;
+  setActiveRoom: (roomId: string) => void;
+  addRoom: (entry: RoomEntry) => void;
+  removeRoom: (roomId: string) => void;
+  updateRoomName: (roomId: string, name: string) => void;
+  // Convenience shortcuts for active room
   roomId: string | null;
   userId: string | null;
   roomCode: string | null;
   nickname: string | null;
-  setRoom: (roomId: string, userId: string, code: string, nickname: string) => void;
   clearRoom: () => void;
+}
+
+const STORAGE_KEY = "doodl_rooms";
+const ACTIVE_KEY = "doodl_active_room";
+
+function loadRooms(): RoomEntry[] {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveRooms(rooms: RoomEntry[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(rooms));
 }
 
 const RoomContext = createContext<RoomState | null>(null);
 
 export function RoomProvider({ children }: { children: ReactNode }) {
-  const [roomId, setRoomId] = useState<string | null>(() => localStorage.getItem("doodl_room_id"));
-  const [userId, setUserId] = useState<string | null>(() => localStorage.getItem("doodl_user_id"));
-  const [roomCode, setRoomCode] = useState<string | null>(() => localStorage.getItem("doodl_room_code"));
-  const [nickname, setNickname] = useState<string | null>(() => localStorage.getItem("doodl_nickname"));
+  const [rooms, setRooms] = useState<RoomEntry[]>(loadRooms);
+  const [activeRoomId, setActiveRoomId] = useState<string | null>(
+    () => localStorage.getItem(ACTIVE_KEY)
+  );
 
-  const setRoom = (rid: string, uid: string, code: string, nick: string) => {
-    setRoomId(rid);
-    setUserId(uid);
-    setRoomCode(code);
-    setNickname(nick);
-    localStorage.setItem("doodl_room_id", rid);
-    localStorage.setItem("doodl_user_id", uid);
-    localStorage.setItem("doodl_room_code", code);
-    localStorage.setItem("doodl_nickname", nick);
+  const activeRoom = rooms.find((r) => r.roomId === activeRoomId) || null;
+
+  useEffect(() => {
+    saveRooms(rooms);
+    // Migrate old single-room localStorage
+    const oldRoomId = localStorage.getItem("doodl_room_id");
+    if (oldRoomId && rooms.length === 0) {
+      const migrated: RoomEntry = {
+        roomId: oldRoomId,
+        doodlUserId: localStorage.getItem("doodl_user_id") || "",
+        code: localStorage.getItem("doodl_room_code") || "",
+        nickname: localStorage.getItem("doodl_nickname") || "",
+      };
+      setRooms([migrated]);
+      setActiveRoomId(oldRoomId);
+      localStorage.removeItem("doodl_room_id");
+      localStorage.removeItem("doodl_user_id");
+      localStorage.removeItem("doodl_room_code");
+      localStorage.removeItem("doodl_nickname");
+    }
+  }, []);
+
+  useEffect(() => {
+    saveRooms(rooms);
+  }, [rooms]);
+
+  useEffect(() => {
+    if (activeRoomId) {
+      localStorage.setItem(ACTIVE_KEY, activeRoomId);
+    } else {
+      localStorage.removeItem(ACTIVE_KEY);
+    }
+  }, [activeRoomId]);
+
+  const setActiveRoom = (roomId: string) => setActiveRoomId(roomId);
+
+  const addRoom = (entry: RoomEntry) => {
+    setRooms((prev) => {
+      if (prev.some((r) => r.roomId === entry.roomId)) return prev;
+      return [...prev, entry];
+    });
+    setActiveRoomId(entry.roomId);
+  };
+
+  const removeRoom = (roomId: string) => {
+    setRooms((prev) => prev.filter((r) => r.roomId !== roomId));
+    if (activeRoomId === roomId) {
+      setActiveRoomId(null);
+    }
+  };
+
+  const updateRoomName = (roomId: string, name: string) => {
+    setRooms((prev) => prev.map((r) => r.roomId === roomId ? { ...r, name } : r));
   };
 
   const clearRoom = () => {
-    setRoomId(null);
-    setUserId(null);
-    setRoomCode(null);
-    setNickname(null);
-    localStorage.removeItem("doodl_room_id");
-    localStorage.removeItem("doodl_user_id");
-    localStorage.removeItem("doodl_room_code");
-    localStorage.removeItem("doodl_nickname");
+    if (activeRoomId) removeRoom(activeRoomId);
   };
 
   // Listen for service worker storage requests
@@ -52,7 +118,21 @@ export function RoomProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <RoomContext.Provider value={{ roomId, userId, roomCode, nickname, setRoom, clearRoom }}>
+    <RoomContext.Provider
+      value={{
+        rooms,
+        activeRoom,
+        setActiveRoom,
+        addRoom,
+        removeRoom,
+        updateRoomName,
+        roomId: activeRoom?.roomId || null,
+        userId: activeRoom?.doodlUserId || null,
+        roomCode: activeRoom?.code || null,
+        nickname: activeRoom?.nickname || null,
+        clearRoom,
+      }}
+    >
       {children}
     </RoomContext.Provider>
   );

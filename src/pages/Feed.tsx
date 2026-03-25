@@ -193,26 +193,17 @@ export default function Feed() {
       {/* Bottom nav */}
       <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border">
         <div className="flex pb-[env(safe-area-inset-bottom)]">
-          <button
-            onClick={() => navigate("/canvas")}
-            className="flex-1 py-3 text-center text-xs text-muted"
-          >
-            <span className="text-lg block">✏️</span>
-            Canvas
+          <button onClick={() => navigate("/rooms")} className="flex-1 py-3 text-center text-xs text-muted">
+            <span className="text-lg block">🏠</span>Rooms
           </button>
-          <button
-            onClick={() => navigate("/feed")}
-            className="flex-1 py-3 text-center text-xs text-purple"
-          >
-            <span className="text-lg block">🖼️</span>
-            Feed
+          <button onClick={() => navigate("/canvas")} className="flex-1 py-3 text-center text-xs text-muted">
+            <span className="text-lg block">✏️</span>Canvas
           </button>
-          <button
-            onClick={() => navigate("/apps")}
-            className="flex-1 py-3 text-center text-xs text-muted"
-          >
-            <span className="text-lg block">🚀</span>
-            Apps
+          <button onClick={() => navigate("/feed")} className="flex-1 py-3 text-center text-xs text-purple">
+            <span className="text-lg block">🖼️</span>Feed
+          </button>
+          <button onClick={() => navigate("/apps")} className="flex-1 py-3 text-center text-xs text-muted">
+            <span className="text-lg block">🚀</span>Apps
           </button>
         </div>
       </div>

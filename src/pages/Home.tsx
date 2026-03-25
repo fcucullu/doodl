@@ -30,7 +30,7 @@ function ShareCode({ code }: { code: string }) {
 
   return (
     <div className="w-full max-w-xs space-y-3">
-      <p className="text-muted text-sm text-center">Share this code with your person:</p>
+      <p className="text-muted text-sm text-center">Share this code:</p>
       <button
         onClick={handleCopy}
         className="w-full bg-surface border border-border rounded-xl px-4 py-4 text-center font-mono text-2xl tracking-[0.4em] text-foreground active:bg-purple/10"
@@ -57,7 +57,7 @@ function generateCode() {
 export default function Home() {
   const navigate = useNavigate();
   const { user, loading: authLoading, signIn } = useAuth();
-  const { setRoom, roomId, roomCode } = useRoom();
+  const { rooms, addRoom } = useRoom();
   const urlCode = new URLSearchParams(window.location.search).get("code") || "";
   const [joinCode, setJoinCode] = useState(urlCode);
   const [nickname, setNickname] = useState("");
@@ -77,35 +77,12 @@ export default function Home() {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center px-6 gap-4">
         <h1 className="text-4xl font-bold">Doodl</h1>
-        <p className="text-muted text-sm">Draw and share with your person</p>
+        <p className="text-muted text-sm">Draw and share with your people</p>
         <button
           onClick={signIn}
           className="w-full max-w-xs bg-purple text-white font-medium py-3 rounded-xl mt-4"
         >
           Sign in with Google
-        </button>
-      </div>
-    );
-  }
-
-  // If already in a room, show option to go back
-  if (roomId) {
-    return (
-      <div className="min-h-[100dvh] flex flex-col items-center justify-center px-6 gap-4">
-        <h1 className="text-3xl font-bold">Doodl</h1>
-        <p className="text-muted text-sm">You're already in a room</p>
-        <ShareCode code={roomCode!} />
-        <button
-          onClick={() => navigate("/canvas")}
-          className="w-full max-w-xs bg-surface border border-border text-foreground font-medium py-3 rounded-xl"
-        >
-          Go to Canvas
-        </button>
-        <button
-          onClick={() => navigate("/feed")}
-          className="w-full max-w-xs bg-surface border border-border text-foreground font-medium py-3 rounded-xl"
-        >
-          View Feed
         </button>
       </div>
     );
@@ -118,10 +95,10 @@ export default function Home() {
         <h1 className="text-3xl font-bold">Room Created!</h1>
         <ShareCode code={createdCode} />
         <button
-          onClick={() => navigate("/canvas")}
+          onClick={() => navigate("/rooms")}
           className="w-full max-w-xs bg-surface border border-border text-foreground font-medium py-3 rounded-xl"
         >
-          Start Drawing
+          Go to Rooms
         </button>
       </div>
     );
@@ -135,7 +112,7 @@ export default function Home() {
     const code = generateCode();
     const { data: room, error: roomErr } = await supabase
       .from("doodl_rooms")
-      .insert({ code })
+      .insert({ code, name: nickname.trim() + "'s Room" })
       .select("id")
       .single();
 
@@ -149,7 +126,13 @@ export default function Home() {
 
     if (userErr || !doodlUser) { setError("Failed to join room"); setLoading(false); return; }
 
-    setRoom(room.id, doodlUser.id, code, nickname.trim());
+    addRoom({
+      roomId: room.id,
+      doodlUserId: doodlUser.id,
+      code,
+      nickname: nickname.trim(),
+      name: nickname.trim() + "'s Room",
+    });
     setLoading(false);
     setCreatedCode(code);
   };
@@ -162,19 +145,18 @@ export default function Home() {
 
     const { data: room } = await supabase
       .from("doodl_rooms")
-      .select("id")
+      .select("id, name")
       .eq("code", joinCode.toUpperCase())
       .single();
 
     if (!room) { setError("Room not found"); setLoading(false); return; }
 
-    // Check if room already has 2 users
-    const { count } = await supabase
-      .from("doodl_users")
-      .select("*", { count: "exact", head: true })
-      .eq("room_id", room.id);
-
-    if (count && count >= 2) { setError("Room is full"); setLoading(false); return; }
+    // Check if already in this room
+    if (rooms.some((r) => r.roomId === room.id)) {
+      setError("You're already in this room");
+      setLoading(false);
+      return;
+    }
 
     const { data: doodlUser, error: userErr } = await supabase
       .from("doodl_users")
@@ -184,15 +166,30 @@ export default function Home() {
 
     if (userErr || !doodlUser) { setError("Failed to join room"); setLoading(false); return; }
 
-    setRoom(room.id, doodlUser.id, joinCode.toUpperCase(), nickname.trim());
+    addRoom({
+      roomId: room.id,
+      doodlUserId: doodlUser.id,
+      code: joinCode.toUpperCase(),
+      nickname: nickname.trim(),
+      name: room.name || undefined,
+    });
     setLoading(false);
-    navigate("/canvas");
+    navigate("/rooms");
   };
 
   return (
     <div className="min-h-[100dvh] flex flex-col items-center justify-center px-6">
       <h1 className="text-4xl font-bold mb-2">Doodl</h1>
-      <p className="text-muted text-sm mb-8">Draw and share with your person</p>
+      <p className="text-muted text-sm mb-8">Draw and share with your people</p>
+
+      {rooms.length > 0 && (
+        <button
+          onClick={() => navigate("/rooms")}
+          className="w-full max-w-xs bg-purple text-white font-medium py-3 rounded-xl mb-4"
+        >
+          My Rooms ({rooms.length})
+        </button>
+      )}
 
       <div className="w-full max-w-xs space-y-4">
         <input
@@ -207,9 +204,9 @@ export default function Home() {
         <button
           onClick={handleCreate}
           disabled={loading}
-          className="w-full bg-purple text-white font-medium py-3 rounded-xl disabled:opacity-50"
+          className="w-full bg-surface border border-border text-foreground font-medium py-3 rounded-xl disabled:opacity-50"
         >
-          Create Room
+          + Create New Room
         </button>
 
         <div className="flex items-center gap-3 text-muted text-xs">

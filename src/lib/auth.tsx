@@ -24,6 +24,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
+      // Store auth ID for service worker badge updates
+      if (session?.user) {
+        localStorage.setItem("doodl_auth_id", session.user.id);
+      } else {
+        localStorage.removeItem("doodl_auth_id");
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -40,10 +46,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    localStorage.removeItem("doodl_room_id");
-    localStorage.removeItem("doodl_user_id");
-    localStorage.removeItem("doodl_room_code");
-    localStorage.removeItem("doodl_nickname");
+    localStorage.removeItem("doodl_rooms");
+    localStorage.removeItem("doodl_active_room");
+    localStorage.removeItem("doodl_auth_id");
   };
 
   return (

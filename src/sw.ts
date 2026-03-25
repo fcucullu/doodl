@@ -8,11 +8,19 @@ precacheAndRoute(self.__WB_MANIFEST);
 // Update badge by calling the badge API
 async function updateBadge() {
   try {
-    const userId = await getStoredValue("doodl_user_id");
-    const roomId = await getStoredValue("doodl_room_id");
-    if (!userId || !roomId) return;
+    // Try auth_id first for multi-room, fall back to single room
+    const authId = await getStoredValue("doodl_auth_id");
+    let url: string;
+    if (authId) {
+      url = `/api/badge?authId=${authId}`;
+    } else {
+      const userId = await getStoredValue("doodl_user_id");
+      const roomId = await getStoredValue("doodl_room_id");
+      if (!userId || !roomId) return;
+      url = `/api/badge?userId=${userId}&roomId=${roomId}`;
+    }
 
-    const response = await fetch(`/api/badge?userId=${userId}&roomId=${roomId}`);
+    const response = await fetch(url);
     if (!response.ok) return;
     const { count } = await response.json();
 
