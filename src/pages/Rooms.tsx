@@ -104,7 +104,7 @@ export default function Rooms() {
       <div className="bg-surface border-b border-border px-4 py-3 flex items-center justify-between shrink-0">
         <h1 className="text-lg font-bold">Rooms</h1>
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/?new=1")}
           className="px-3 py-1.5 rounded-lg text-sm font-medium bg-purple text-white"
         >
           + New

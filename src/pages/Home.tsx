@@ -88,8 +88,9 @@ export default function Home() {
     );
   }
 
-  // If user has rooms, redirect to rooms list
-  if (rooms.length > 0 && !createdCode) {
+  // If user has rooms and not explicitly creating, redirect to rooms list
+  const isNewRoom = new URLSearchParams(window.location.search).has("new");
+  if (rooms.length > 0 && !createdCode && !isNewRoom && !urlCode) {
     navigate("/rooms", { replace: true });
     return null;
   }
