@@ -24,7 +24,6 @@ export default function Feed() {
   const navigate = useNavigate();
   const { roomId, userId, roomCode, clearRoom, activeRoom } = useRoom();
   const [doodles, setDoodles] = useState<Doodle[]>([]);
-  const [users, setUsers] = useState<Record<string, string>>({});
   const usersRef = useRef<Record<string, string>>({});
   const [reactingId, setReactingId] = useState<string | null>(null);
 
@@ -79,7 +78,6 @@ export default function Feed() {
     const userMap: Record<string, string> = {};
     roomUsers?.forEach((u) => { userMap[u.id] = u.nickname; });
     usersRef.current = userMap;
-    setUsers(userMap);
 
     await loadDoodles(userMap);
   };
