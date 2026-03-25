@@ -85,7 +85,7 @@ export default function Feed() {
   };
 
   const loadDoodles = async (userMap?: Record<string, string>) => {
-    const map = userMap || users;
+    const map = userMap || usersRef.current;
     const { data } = await supabase
       .from("doodl_doodles")
       .select("*, doodl_reactions(emoji, reactor_id)")
