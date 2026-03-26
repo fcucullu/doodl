@@ -33,11 +33,16 @@ jobs:
 
       - name: Sync migration placeholders
         if: steps.check.outputs.skip != 'true'
+        shell: bash
         run: |
-          REMOTE_VERSIONS=$(supabase migration list 2>&1 | awk '/^   [0-9]/{print $1}' | sort -u)
+          set +e
+          OUTPUT=$(supabase migration list 2>&1)
+          set -e
+          REMOTE_VERSIONS=$(echo "$OUTPUT" | awk '/^   [0-9]/{print $1}' | sort -u)
           for v in $REMOTE_VERSIONS; do
             if ! ls supabase/migrations/${v}* 2>/dev/null | grep -q .; then
               touch "supabase/migrations/${v}_.sql"
+              echo "Created placeholder for migration $v"
             fi
           done
 
