@@ -31,24 +31,30 @@ jobs:
         if: steps.check.outputs.skip != 'true'
         run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
 
-      - name: Sync migration placeholders
+      - name: Push database migrations
         if: steps.check.outputs.skip != 'true'
         shell: bash
         run: |
           set +e
-          OUTPUT=$(supabase migration list 2>&1)
+          OUTPUT=$(supabase db push --include-all 2>&1)
+          EXIT_CODE=$?
           set -e
-          REMOTE_VERSIONS=$(echo "$OUTPUT" | awk '/^   [0-9]/{print $1}' | sort -u)
-          for v in $REMOTE_VERSIONS; do
-            if ! ls supabase/migrations/${v}* 2>/dev/null | grep -q .; then
-              touch "supabase/migrations/${v}_.sql"
-              echo "Created placeholder for migration $v"
-            fi
-          done
-
-      - name: Push database migrations
-        if: steps.check.outputs.skip != 'true'
-        run: supabase db push --include-all
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "$OUTPUT"
+          elif echo "$OUTPUT" | grep -q "migration repair"; then
+            echo "Creating placeholders for missing migrations..."
+            VERSIONS=$(echo "$OUTPUT" | grep -oE '[0-9]{3}' | sort -u)
+            for v in $VERSIONS; do
+              if ! ls supabase/migrations/${v}* 2>/dev/null | grep -q .; then
+                touch "supabase/migrations/${v}_.sql"
+                echo "  Created placeholder: ${v}_.sql"
+              fi
+            done
+            supabase db push --include-all
+          else
+            echo "$OUTPUT"
+            exit $EXIT_CODE
+          fi
 
   deploy:
     runs-on: ubuntu-latest
