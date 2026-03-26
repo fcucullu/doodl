@@ -31,9 +31,19 @@ jobs:
         if: steps.check.outputs.skip != 'true'
         run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
 
+      - name: Sync migration placeholders
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          REMOTE_VERSIONS=$(supabase migration list 2>/dev/null | awk '/^   [0-9]/{print $1}' | sort -u)
+          for v in $REMOTE_VERSIONS; do
+            if ! ls supabase/migrations/${v}* 2>/dev/null | grep -q .; then
+              touch "supabase/migrations/${v}_.sql"
+            fi
+          done
+
       - name: Push database migrations
         if: steps.check.outputs.skip != 'true'
-        run: supabase db push
+        run: supabase db push --include-all
 
   deploy:
     runs-on: ubuntu-latest
