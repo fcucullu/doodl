@@ -1,73 +1,55 @@
-# React + TypeScript + Vite
+<p align="center">
+  <img src="public/icon-192.png" width="80" alt="Doodl" />
+</p>
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# Doodl
 
-Currently, two official plugins are available:
+**Draw and share doodles with your people.**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## The Problem
 
-## React Compiler
+Texting is practical but impersonal. Sending a photo is easy but generic. Sometimes you want to communicate something more personal — a quick sketch, a silly drawing, a visual inside joke — but there's no simple, intimate way to do it.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## The Solution
 
-## Expanding the ESLint configuration
+Doodl is a PWA for drawing and sharing doodles in real-time. Create a room, share a 6-character code, and start exchanging drawings. Everyone in the room sees new doodles instantly and can react with emojis. It's like passing notes in class, but digital.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Who It's For
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Couples who want a playful, visual way to communicate
+- Friends who enjoy creative expression
+- Families with kids who love drawing
+- Anyone who wants something more personal than a text
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Key Features
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- Google sign-in
+- Multi-room support — be in multiple rooms at once
+- Full drawing canvas with pencil, brush (pressure-sensitive), and eraser
+- 16 colors, 5 brush sizes, 8 background colors
+- Share room code via native share sheet (WhatsApp, etc.)
+- Auto-join from shared links
+- Real-time feed of sent and received doodles
+- WhatsApp-style emoji reactions (everyone in the room can react)
+- Push notifications with doodle image preview
+- App badge showing unseen doodle count
+- Room management: rename, leave, create unlimited rooms
+- Installable as a PWA on mobile
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Tech Stack
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+React + Vite, Supabase (Postgres + Auth + Real-time + Storage), Vercel, Cloudflare DNS, PWA with Web Push
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Live
+
+https://doodl.franciscocucullu.com
+
+---
+
+## Author
+
+**Francisco Cucullu** — Software engineer and indie developer building side projects from scratch.
+
+- Website: [franciscocucullu.com](https://franciscocucullu.com)
+- LinkedIn: [linkedin.com/in/franciscocucullu](https://linkedin.com/in/franciscocucullu)
+- All apps: [franciscocucullu.com/apps](https://franciscocucullu.com/apps)
