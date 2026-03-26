@@ -7,14 +7,15 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Count unique authenticated users who have used Doodl
-  // (profiles table is populated on Google sign-in via trigger)
-  const { count } = await supabase
+  // Count UNIQUE authenticated users (not rows — one user can join many rooms)
+  const { data } = await supabase
     .from("doodl_users")
-    .select("auth_id", { count: "exact", head: true })
+    .select("auth_id")
     .not("auth_id", "is", null);
+
+  const uniqueUsers = new Set((data ?? []).map((d) => d.auth_id));
 
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "public, max-age=60");
-  res.json({ users: count ?? 0 });
+  res.json({ users: uniqueUsers.size });
 }
