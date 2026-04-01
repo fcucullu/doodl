@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useRoom, type RoomEntry } from "../lib/room";
+import { InstallPrompt } from "../components/install-prompt";
 
 interface RoomWithBadge extends RoomEntry {
   unseen: number;
@@ -135,6 +136,7 @@ export default function Rooms() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 pb-[calc(1rem+4rem+env(safe-area-inset-bottom))] space-y-3">
+        <InstallPrompt />
         {roomsData.length === 0 && (
           <p className="text-center text-muted text-sm py-12">No rooms yet.</p>
         )}
