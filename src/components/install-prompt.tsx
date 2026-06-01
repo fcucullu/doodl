@@ -37,6 +37,11 @@ export function InstallPrompt() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has("reinstall")) localStorage.removeItem(DISMISS_KEY);
+    }
+
     if (isStandalone() || isDismissed()) return;
 
     if (isIOS()) {

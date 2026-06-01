@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useRoom } from "../lib/room";
 import { useAuth } from "../lib/auth";
+import { InstallPrompt } from "../components/install-prompt";
 
 function ShareCode({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
@@ -142,6 +143,9 @@ export default function Home() {
         >
           Sign in with Google
         </button>
+        <div className="w-full max-w-xs mt-6 text-left">
+          <InstallPrompt />
+        </div>
       </div>
     );
   }
